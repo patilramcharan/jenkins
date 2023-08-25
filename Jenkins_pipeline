@@ -1,0 +1,40 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+
+                git '/repo.git'
+
+                sh 'mvn clean install'
+
+            }
+        }    
+        
+        stage('Deploy') {
+
+            environment {
+                APP_NAME = 'my-app'
+                NAMESPACE = 'my-Namespace'
+
+            }
+            steps {
+                sh 'kubectl apply -f kubernetes/deployment.yaml -n $NAMESAPCE'
+
+                sh 'kubectl rollback status deplyment/$APP_NAME -n $NAMESPACE'
+
+                sh 'kubectl expose deployment/$APP_NAME --type=Loadbalance --port=8080 -n $NAMESPACE'
+
+            }
+        }
+
+        stage('TEST') {
+            steps {
+
+                sh 'mvn test'
+            }
+        }
+        }
+}
+
